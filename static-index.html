@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1e3c72">
+    <title>六二超级联赛 - 赛事查看系统</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .page {
+            display: none;
+            min-height: 100vh;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .page.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+            animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 主页面样式 */
+        .header {
+            background: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .title-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .csl-title-logo {
+            display: flex;
+            align-items: center;
+        }
+
+        .title-logo-circle {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #d40000 0%, #ff0000 50%, #d40000 100%);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border: 2px solid #ffcc00;
+            box-shadow: 0 2px 8px rgba(212, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .title-logo-text {
+            font-size: 11px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            letter-spacing: 0.5px;
+            font-family: 'Arial', sans-serif;
+            z-index: 2;
+            position: relative;
+        }
+
+        .title-logo-star {
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            color: #ffcc00;
+            font-size: 7px;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+            z-index: 2;
+        }
+
+        .header h1 {
+            font-size: 1.5em;
+            color: #1e3c72;
+        }
+
+        .content {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .news-section, .standings-section, .recent-matches, .top-scorers {
+            background: white;
+            margin-bottom: 20px;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .news-section:hover, .standings-section:hover, .recent-matches:hover, .top-scorers:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .news-section h2, .standings-section h2, .recent-matches h2, .top-scorers h2 {
+            color: #1e3c72;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .news-section h2::before {
+            content: '📰';
+            font-size: 1.2em;
+        }
+
+        .standings-section h2::before {
+            content: '🏆';
+            font-size: 1.2em;
+        }
+
+        .recent-matches h2::before {
+            content: '⚽';
+            font-size: 1.2em;
+        }
+
+        .top-scorers h2::before {
+            content: '👑';
+            font-size: 1.2em;
+        }
+
+        /* 新闻样式 */
+        .news-item {
+            border-left: 4px solid #1e3c72;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .news-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .news-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .news-type {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .news-type.important {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .news-type.normal {
+            background: #4ecdc4;
+            color: white;
+        }
+
+        .news-date {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .news-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #1e3c72;
+            margin-bottom: 8px;
+        }
+
+        .news-content {
+            color: #555;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+
+        .news-footer {
+            font-size: 12px;
+            color: #888;
+        }
+
+        /* 积分榜样式 */
+        .standings-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .standings-table th {
+            background: #1e3c72;
+            color: white;
+            padding: 12px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .standings-table th:first-child {
+            border-radius: 8px 0 0 0;
+        }
+
+        .standings-table th:last-child {
+            border-radius: 0 8px 0 0;
+        }
+
+        .team-row {
+            border-bottom: 1px solid #eee;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .team-row:hover {
+            background: #f8f9fa;
+        }
+
+        .team-row.champion {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            font-weight: bold;
+        }
+
+        .team-row td {
+            padding: 12px;
+            text-align: center;
+        }
+
+        .team-row .team {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-align: left;
+        }
+
+        .team-logo {
+            font-size: 1.2em;
+        }
+
+        /* 比赛样式 */
+        .match-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            transition: all 0.3s ease;
+        }
+
+        .match-item:hover {
+            background: #f8f9fa;
+        }
+
+        .match-teams {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+        }
+
+        .team-name {
+            font-weight: bold;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .match-score {
+            background: #1e3c72;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .match-info {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* 射手榜样式 */
+        .scorer-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            transition: all 0.3s ease;
+        }
+
+        .scorer-item:hover {
+            background: #f8f9fa;
+        }
+
+        .scorer-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .scorer-rank {
+            background: #1e3c72;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .scorer-name {
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+        .scorer-team {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .scorer-goals {
+            font-weight: bold;
+            color: #e74c3c;
+            font-size: 1.1em;
+        }
+
+        /* 新闻详情页样式 */
+        .news-detail {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .news-detail-header {
+            border-bottom: 2px solid #1e3c72;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        .news-detail-title {
+            font-size: 1.8em;
+            color: #1e3c72;
+            margin-bottom: 10px;
+        }
+
+        .news-detail-meta {
+            display: flex;
+            gap: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .news-detail-content {
+            font-size: 1.1em;
+            line-height: 1.8;
+            color: #333;
+        }
+
+        .back-btn {
+            background: #1e3c72;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 20px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: #2a5298;
+            transform: translateY(-1px);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .content {
+                padding: 10px;
+            }
+
+            .match-item {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .match-info {
+                justify-content: center;
+            }
+
+            .standings-table {
+                font-size: 14px;
+            }
+
+            .standings-table th,
+            .standings-table td {
+                padding: 8px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 主页面 -->
+    <div id="main-page" class="page active">
+        <div class="header">
+            <div class="title-section">
+                <div class="csl-title-logo">
+                    <div class="title-logo-circle">
+                        <div class="title-logo-text">六二</div>
+                        <div class="title-logo-star">★</div>
+                    </div>
+                </div>
+                <h1>六二超级联赛</h1>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- 新闻板块 -->
+            <div class="news-section">
+                <h2>最新新闻</h2>
+                <div id="news-container"></div>
+            </div>
+
+            <!-- 积分榜 -->
+            <div class="standings-section">
+                <h2>积分榜</h2>
+                <table class="standings-table">
+                    <thead>
+                        <tr>
+                            <th>排名</th>
+                            <th>球队</th>
+                            <th>场次</th>
+                            <th>胜</th>
+                            <th>平</th>
+                            <th>负</th>
+                            <th>进球</th>
+                            <th>失球</th>
+                            <th>净胜球</th>
+                            <th>积分</th>
+                        </tr>
+                    </thead>
+                    <tbody id="standings-body"></tbody>
+                </table>
+            </div>
+
+            <!-- 最近比赛 -->
+            <div class="recent-matches">
+                <h2>最近比赛</h2>
+                <div id="matches-list"></div>
+            </div>
+
+            <!-- 射手榜 -->
+            <div class="top-scorers">
+                <h2>射手榜</h2>
+                <div id="scorers-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新闻详情页 -->
+    <div id="news-detail-page" class="page">
+        <div class="header">
+            <div class="title-section">
+                <div class="csl-title-logo">
+                    <div class="title-logo-circle">
+                        <div class="title-logo-text">六二</div>
+                        <div class="title-logo-star">★</div>
+                    </div>
+                </div>
+                <h1>新闻详情</h1>
+            </div>
+        </div>
+
+        <div class="news-detail">
+            <div class="news-detail-header">
+                <h1 id="news-detail-title"></h1>
+                <div class="news-detail-meta">
+                    <span>日期: <span id="news-detail-date"></span></span>
+                    <span>作者: <span id="news-detail-author"></span></span>
+                    <span>类型: <span id="news-detail-type"></span></span>
+                </div>
+            </div>
+            <div class="news-detail-content" id="news-detail-content"></div>
+        </div>
+
+        <button class="back-btn" onclick="showPage('main-page')">返回首页</button>
+    </div>
+
+    <script>
+        // 联赛数据
+        const leagueData = {
+            news: [
+                {
+                    id: 1,
+                    title: '六二超级联赛正式开赛！',
+                    content: '六二班足球联赛正式拉开帷幕，三支球队将展开激烈角逐，争夺冠军荣誉！',
+                    date: '2024-11-01',
+                    author: '管理员',
+                    type: '重要通知'
+                },
+                {
+                    id: 2,
+                    title: '闪电队豪取三连胜',
+                    content: '闪电队在前三轮比赛中表现出色，以全胜战绩暂列积分榜首位。',
+                    date: '2024-11-05',
+                    author: '管理员',
+                    type: '赛事快讯'
+                },
+                {
+                    id: 3,
+                    title: '射手榜竞争激烈',
+                    content: '张三以8球领跑射手榜，李四和王五紧随其后，金靴奖争夺异常激烈。',
+                    date: '2024-11-10',
+                    author: '管理员',
+                    type: '球员动态'
+                }
+            ],
+            
+            teams: [
+                {
+                    id: 1,
+                    name: '闪电队',
+                    shortName: '闪电',
+                    logo: '⚡',
+                    played: 6,
+                    won: 4,
+                    drawn: 1,
+                    lost: 1,
+                    goalsFor: 12,
+                    goalsAgainst: 5,
+                    points: 13
+                },
+                {
+                    id: 2,
+                    name: '猛虎队',
+                    shortName: '猛虎',
+                    logo: '🐯',
+                    played: 6,
+                    won: 3,
+                    drawn: 2,
+                    lost: 1,
+                    goalsFor: 10,
+                    goalsAgainst: 6,
+                    points: 11
+                },
+                {
+                    id: 3,
+                    name: '飞鹰队',
+                    shortName: '飞鹰',
+                    logo: '🦅',
+                    played: 6,
+                    won: 2,
+                    drawn: 1,
+                    lost: 3,
+                    goalsFor: 8,
+                    goalsAgainst: 9,
+                    points: 7
+                }
+            ],
+            
+            recentMatches: [
+                {
+                    id: 1,
+                    homeTeam: '闪电队',
+                    awayTeam: '猛虎队',
+                    homeScore: 2,
+                    awayScore: 1,
+                    date: '2024-11-10',
+                    time: '15:00',
+                    venue: '学校操场'
+                },
+                {
+                    id: 2,
+                    homeTeam: '飞鹰队',
+                    awayTeam: '闪电队',
+                    homeScore: 0,
+                    awayScore: 3,
+                    date: '2024-11-08',
+                    time: '16:30',
+                    venue: '学校操场'
+                },
+                {
+                    id: 3,
+                    homeTeam: '猛虎队',
+                    awayTeam: '飞鹰队',
+                    homeScore: 2,
+                    awayScore: 2,
+                    date: '2024-11-05',
+                    time: '14:00',
+                    venue: '学校操场'
+                }
+            ],
+            
+            topScorers: [
+                {
+                    rank: 1,
+                    name: '张三',
+                    team: '闪电队',
+                    goals: 8,
+                    assists: 3
+                },
+                {
+                    rank: 2,
+                    name: '李四',
+                    team: '猛虎队',
+                    goals: 6,
+                    assists: 4
+                },
+                {
+                    rank: 3,
+                    name: '王五',
+                    team: '飞鹰队',
+                    goals: 5,
+                    assists: 2
+                }
+            ]
+        };
+
+        // 页面切换函数
+        function showPage(pageId) {
+            const currentPage = document.querySelector('.page.active');
+            const nextPage = document.getElementById(pageId);
+            
+            if (currentPage && currentPage !== nextPage) {
+                currentPage.style.opacity = '0';
+                currentPage.style.transform = 'translateY(-20px)';
+                
+                setTimeout(() => {
+                    currentPage.classList.remove('active');
+                    nextPage.classList.add('active');
+                    
+                    void nextPage.offsetWidth;
+                    
+                    nextPage.style.opacity = '1';
+                    nextPage.style.transform = 'translateY(0)';
+                }, 300);
+            }
+        }
+
+        // 渲染新闻
+        function renderNews() {
+            const newsContainer = document.getElementById('news-container');
+            
+            newsContainer.innerHTML = leagueData.news.map(news => {
+                const newsDate = new Date(news.date);
+                const formattedDate = newsDate.toLocaleDateString('zh-CN', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+                
+                return `
+                    <div class="news-item" onclick="showNewsDetail(${news.id})">
+                        <div class="news-header">
+                            <span class="news-type ${news.type === '重要通知' ? 'important' : 'normal'}">${news.type}</span>
+                            <span class="news-date">${formattedDate}</span>
+                        </div>
+                        <h3 class="news-title">${news.title}</h3>
+                        <p class="news-content">${news.content}</p>
+                        <div class="news-footer">
+                            <span class="news-author">${news.author}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 显示新闻详情
+        function showNewsDetail(newsId) {
+            const news = leagueData.news.find(n => n.id === newsId);
+            if (!news) return;
+            
+            const newsDate = new Date(news.date);
+            const formattedDate = newsDate.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            document.getElementById('news-detail-title').textContent = news.title;
+            document.getElementById('news-detail-content').textContent = news.content;
+            document.getElementById('news-detail-date').textContent = formattedDate;
+            document.getElementById('news-detail-author').textContent = news.author;
+            document.getElementById('news-detail-type').textContent = news.type;
+            
+            showPage('news-detail-page');
+        }
+
+        // 渲染积分榜
+        function renderStandings() {
+            const standingsBody = document.getElementById('standings-body');
+            
+            // 按积分排序
+            const sortedTeams = [...leagueData.teams].sort((a, b) => b.points - a.points);
+            
+            standingsBody.innerHTML = sortedTeams.map((team, index) => {
+                const goalDifference = team.goalsFor - team.goalsAgainst;
+                const isChampion = index === 0 ? 'champion' : '';
+                
+                return `
+                    <tr class="team-row ${isChampion}">
+                        <td>${index + 1}</td>
+                        <td>
+                            <div class="team">
+                                <div class="team-logo">${team.logo}</div>
+                                <span>${team.name}</span>
+                            </div>
+                        </td>
+                        <td>${team.played}</td>
+                        <td>${team.won}</td>
+                        <td>${team.drawn}</td>
+                        <td>${team.lost}</td>
+                        <td>${team.goalsFor}</td>
+                        <td>${team.goalsAgainst}</td>
+                        <td>${goalDifference > 0 ? '+' : ''}${goalDifference}</td>
+                        <td><strong>${team.points}</strong></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 渲染最近比赛
+        function renderRecentMatches() {
+            const matchesList = document.getElementById('matches-list');
+            
+            matchesList.innerHTML = leagueData.recentMatches.map(match => {
+                const matchDate = new Date(match.date);
+                const formattedDate = matchDate.toLocaleDateString('zh-CN', {
+                    month: 'short',
+                    day: 'numeric'
+                });
+                
+                return `
+                    <div class="match-item">
+                        <div class="match-teams">
+                            <div class="team-name">${match.homeTeam}</div>
+                            <div class="match-score">${match.homeScore} - ${match.awayScore}</div>
+                            <div class="team-name">${match.awayTeam}</div>
+                        </div>
+                        <div class="match-info">
+                            <span>📅 ${formattedDate}</span>
+                            <span>🕒 ${match.time}</span>
+                            <span>📍 ${match.venue}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 渲染射手榜
+        function renderTopScorers() {
+            const scorersList = document.getElementById('scorers-list');
+            
+            scorersList.innerHTML = leagueData.topScorers.map(scorer => {
+                return `
+                    <div class="scorer-item">
+                        <div class="scorer-info">
+                            <div class="scorer-rank">${scorer.rank}</div>
+                            <div>
+                                <div class="scorer-name">${scorer.name}</div>
+                                <div class="scorer-team">${scorer.team}</div>
+                            </div>
+                        </div>
+                        <div class="scorer-goals">${scorer.goals} 球</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 渲染所有数据
+        function renderAllData() {
+            renderNews();
+            renderStandings();
+            renderRecentMatches();
+            renderTopScorers();
+        }
+
+        // 页面加载完成后渲染数据
+        document.addEventListener('DOMContentLoaded', function() {
+            renderAllData();
+        });
+    </script>
+</body>
+</html>
